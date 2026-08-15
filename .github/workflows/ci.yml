@@ -17,3 +17,23 @@ jobs:
         run: make test
       - name: Build
         run: make build
+
+  helm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.16.3
+      - name: Lint chart
+        run: |
+          helm lint ./charts/ghsecop \
+            --set credentials.connectToken=dummy \
+            --set credentials.githubToken=dummy
+      - name: Template chart
+        run: |
+          helm template ghsecop ./charts/ghsecop \
+            --namespace ghsecop-system \
+            --set credentials.connectToken=dummy \
+            --set credentials.githubToken=dummy \
+            >/dev/null
