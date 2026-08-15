@@ -1,0 +1,22 @@
+# Binaries
+bin/
+manager
+*.exe
+*.test
+*.out
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Dependencies / coverage
+vendor/
+coverage.out
+coverage.html
+
+# Env / secrets
+.env
+*.pem
+1password-credentials.json
