@@ -1,0 +1,19 @@
+apiVersion: v2
+name: ghsecop
+description: Kubernetes operator that syncs 1Password Connect items to GitHub Actions repository secrets
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+home: https://github.com/heartwilltell/ghsecop
+sources:
+  - https://github.com/heartwilltell/ghsecop
+keywords:
+  - 1password
+  - connect
+  - github
+  - actions
+  - secrets
+  - operator
+maintainers:
+  - name: heartwilltell
+    url: https://github.com/heartwilltell

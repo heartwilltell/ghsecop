@@ -1,0 +1,21 @@
+# Example values that create a GitHubSecretSync with the release.
+#
+# helm upgrade --install ghsecop ./charts/ghsecop -n ghsecop-system \
+#   --set credentials.existingSecret=ghsecop-credentials \
+#   -f charts/ghsecop/values-sync-example.yaml
+
+syncs:
+  - name: secure-node
+    itemPath: vaults/Infrastructure/items/secure-node
+    github:
+      organization: my-org
+      # repositories:
+      #   - api
+      #   - web
+      # excludeRepositories:
+      #   - sandbox
+    secretNamePrefix: OP
+    syncIntervalSeconds: 300
+    # fields:
+    #   - username
+    #   - password

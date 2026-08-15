@@ -68,29 +68,46 @@ See `config/samples/ghsecop_v1_githubsecretsync.yaml` for more options (`fields`
   (classic PAT: `repo` + `admin:org` as needed, or a fine-grained token / GitHub App with equivalent scopes)
 - Kubernetes cluster access
 
-## Install
+## Install (Helm)
 
-1. Edit credentials in `deploy/all-in-one.yaml` (or create the secret separately):
+```bash
+kubectl create namespace ghsecop-system
+
+helm upgrade --install ghsecop ./charts/ghsecop \
+  --namespace ghsecop-system \
+  --set credentials.connectHost=http://onepassword-connect.default.svc.cluster.local:8080 \
+  --set credentials.connectToken="$OP_CONNECT_TOKEN" \
+  --set credentials.githubToken="$GITHUB_TOKEN"
+```
+
+Or point at an existing secret:
 
 ```bash
 kubectl -n ghsecop-system create secret generic ghsecop-credentials \
   --from-literal=OP_CONNECT_HOST=http://onepassword-connect.default.svc.cluster.local:8080 \
-  --from-literal=OP_CONNECT_TOKEN='...' \
-  --from-literal=GITHUB_TOKEN='...'
+  --from-literal=OP_CONNECT_TOKEN="$OP_CONNECT_TOKEN" \
+  --from-literal=GITHUB_TOKEN="$GITHUB_TOKEN"
+
+helm upgrade --install ghsecop ./charts/ghsecop \
+  --namespace ghsecop-system \
+  --set credentials.existingSecret=ghsecop-credentials
 ```
 
-2. Apply the operator (CRD + RBAC + Deployment):
-
-```bash
-kubectl apply -f deploy/all-in-one.yaml
-```
-
-3. Apply a sync resource:
+Apply a sync resource (or set `syncs` in Helm values — see `charts/ghsecop/values-sync-example.yaml`):
 
 ```bash
 kubectl apply -f config/samples/ghsecop_v1_githubsecretsync.yaml
 kubectl get githubsecretsyncs
 kubectl describe githubsecretsync secure-node
+```
+
+Chart details: [`charts/ghsecop/README.md`](charts/ghsecop/README.md).
+
+### Install (raw manifests)
+
+```bash
+# Edit credentials in deploy/all-in-one.yaml first, or create the secret separately.
+kubectl apply -f deploy/all-in-one.yaml
 ```
 
 ## Configuration

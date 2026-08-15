@@ -1,0 +1,70 @@
+{{- if .Values.rbac.create -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "ghsecop.fullname" . }}-manager
+  labels:
+    {{- include "ghsecop.labels" . | nindent 4 }}
+rules:
+  - apiGroups: ["ghsecop.io"]
+    resources: ["githubsecretsyncs"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["ghsecop.io"]
+    resources: ["githubsecretsyncs/status"]
+    verbs: ["get", "update", "patch"]
+  - apiGroups: ["ghsecop.io"]
+    resources: ["githubsecretsyncs/finalizers"]
+    verbs: ["update"]
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "ghsecop.fullname" . }}-manager
+  labels:
+    {{- include "ghsecop.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "ghsecop.fullname" . }}-manager
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "ghsecop.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "ghsecop.fullname" . }}-leader-election
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ghsecop.labels" . | nindent 4 }}
+rules:
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "ghsecop.fullname" . }}-leader-election
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ghsecop.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "ghsecop.fullname" . }}-leader-election
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "ghsecop.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+{{- end }}
