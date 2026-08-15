@@ -70,28 +70,40 @@ See `config/samples/ghsecop_v1_githubsecretsync.yaml` for more options (`fields`
 
 ## Install (Helm)
 
-```bash
-kubectl create namespace ghsecop-system
+### From the public chart repository
 
-helm upgrade --install ghsecop ./charts/ghsecop \
-  --namespace ghsecop-system \
+```bash
+helm repo add ghsecop https://heartwilltell.github.io/ghsecop
+helm repo update
+
+helm upgrade --install ghsecop ghsecop/ghsecop \
+  --namespace ghsecop-system --create-namespace \
   --set credentials.connectHost=http://onepassword-connect.default.svc.cluster.local:8080 \
   --set credentials.connectToken="$OP_CONNECT_TOKEN" \
   --set credentials.githubToken="$GITHUB_TOKEN"
 ```
 
-Or point at an existing secret:
+Or via OCI:
 
 ```bash
-kubectl -n ghsecop-system create secret generic ghsecop-credentials \
-  --from-literal=OP_CONNECT_HOST=http://onepassword-connect.default.svc.cluster.local:8080 \
-  --from-literal=OP_CONNECT_TOKEN="$OP_CONNECT_TOKEN" \
-  --from-literal=GITHUB_TOKEN="$GITHUB_TOKEN"
-
-helm upgrade --install ghsecop ./charts/ghsecop \
-  --namespace ghsecop-system \
-  --set credentials.existingSecret=ghsecop-credentials
+helm upgrade --install ghsecop oci://ghcr.io/heartwilltell/charts/ghsecop --version 0.1.0 \
+  --namespace ghsecop-system --create-namespace \
+  --set credentials.connectHost=http://onepassword-connect.default.svc.cluster.local:8080 \
+  --set credentials.connectToken="$OP_CONNECT_TOKEN" \
+  --set credentials.githubToken="$GITHUB_TOKEN"
 ```
+
+### From this repository
+
+```bash
+helm upgrade --install ghsecop ./charts/ghsecop \
+  --namespace ghsecop-system --create-namespace \
+  --set credentials.connectHost=http://onepassword-connect.default.svc.cluster.local:8080 \
+  --set credentials.connectToken="$OP_CONNECT_TOKEN" \
+  --set credentials.githubToken="$GITHUB_TOKEN"
+```
+
+Or point at an existing secret with `--set credentials.existingSecret=ghsecop-credentials`.
 
 Apply a sync resource (or set `syncs` in Helm values — see `charts/ghsecop/values-sync-example.yaml`):
 

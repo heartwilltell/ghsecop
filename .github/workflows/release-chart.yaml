@@ -1,0 +1,81 @@
+name: Release Helm chart
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "charts/**"
+      - ".github/workflows/release-chart.yaml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  packages: write
+  pages: write
+  id-token: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.16.3
+
+      - name: Run chart-releaser
+        uses: helm/chart-releaser-action@v1.7.0
+        with:
+          charts_dir: charts
+          skip_existing: true
+          packages_with_index: true
+        env:
+          CR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push charts to GHCR (OCI)
+        run: |
+          shopt -s nullglob
+          packages=(.cr-release-packages/*.tgz)
+          if [ ${#packages[@]} -eq 0 ]; then
+            echo "No new chart packages to push to OCI"
+            exit 0
+          fi
+          for pkg in "${packages[@]}"; do
+            echo "Pushing ${pkg} to oci://ghcr.io/${GITHUB_REPOSITORY_OWNER}/charts"
+            helm push "${pkg}" "oci://ghcr.io/${GITHUB_REPOSITORY_OWNER}/charts"
+          done
+
+      - name: Make GHCR chart package public
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Best-effort: GHCR packages default to private for the first push.
+          OWNER="${GITHUB_REPOSITORY_OWNER}"
+          PACKAGE="charts%2Fghsecop"
+          if gh api -X GET "/users/${OWNER}/packages/container/${PACKAGE}" >/dev/null 2>&1; then
+            gh api -X PUT "/users/${OWNER}/packages/container/${PACKAGE}/visibility" \
+              -f visibility=public \
+              && echo "Package visibility set to public" \
+              || echo "Could not set package visibility automatically; set it in GitHub Packages UI"
+          else
+            echo "Package not found yet or API unavailable; set visibility in GitHub Packages UI if needed"
+          fi
