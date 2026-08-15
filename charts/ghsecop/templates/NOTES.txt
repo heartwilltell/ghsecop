@@ -1,0 +1,24 @@
+1. Get the operator pods:
+  kubectl get pods -n {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "ghsecop.name" . }},app.kubernetes.io/instance={{ .Release.Name }}"
+
+2. Create a GitHubSecretSync (or set syncs in values):
+
+  kubectl apply -f - <<EOF
+  apiVersion: ghsecop.io/v1
+  kind: GitHubSecretSync
+  metadata:
+    name: secure-node
+    namespace: {{ .Release.Namespace }}
+  spec:
+    itemPath: vaults/Infrastructure/items/secure-node
+    github:
+      organization: my-org
+    secretNamePrefix: OP
+  EOF
+
+3. Check sync status:
+  kubectl get githubsecretsyncs -n {{ .Release.Namespace }}
+  kubectl describe githubsecretsync secure-node -n {{ .Release.Namespace }}
+
+Credentials secret: {{ include "ghsecop.credentialsSecretName" . }}
+Polling interval: {{ .Values.pollingInterval }}
