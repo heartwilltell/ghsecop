@@ -2,15 +2,37 @@
 
 Deploys the ghsecop Kubernetes operator, which syncs 1Password Connect items into GitHub Actions repository secrets.
 
-## Install
+## Install from the public chart repository
+
+### Helm repo (GitHub Pages)
 
 ```bash
-# Create namespace
-kubectl create namespace ghsecop-system
+helm repo add ghsecop https://heartwilltell.github.io/ghsecop
+helm repo update
 
+helm upgrade --install ghsecop ghsecop/ghsecop \
+  --namespace ghsecop-system --create-namespace \
+  --set credentials.connectHost=http://onepassword-connect.default.svc.cluster.local:8080 \
+  --set credentials.connectToken="$OP_CONNECT_TOKEN" \
+  --set credentials.githubToken="$GITHUB_TOKEN"
+```
+
+### OCI (GHCR)
+
+```bash
+helm upgrade --install ghsecop oci://ghcr.io/heartwilltell/charts/ghsecop --version 0.1.0 \
+  --namespace ghsecop-system --create-namespace \
+  --set credentials.connectHost=http://onepassword-connect.default.svc.cluster.local:8080 \
+  --set credentials.connectToken="$OP_CONNECT_TOKEN" \
+  --set credentials.githubToken="$GITHUB_TOKEN"
+```
+
+## Install from this repository (local)
+
+```bash
 # Option A: pass credentials on the CLI
 helm upgrade --install ghsecop ./charts/ghsecop \
-  --namespace ghsecop-system \
+  --namespace ghsecop-system --create-namespace \
   --set credentials.connectHost=http://onepassword-connect.default.svc.cluster.local:8080 \
   --set credentials.connectToken="$OP_CONNECT_TOKEN" \
   --set credentials.githubToken="$GITHUB_TOKEN"
@@ -40,8 +62,8 @@ syncs:
 ```
 
 ```bash
-helm upgrade --install ghsecop ./charts/ghsecop \
-  --namespace ghsecop-system \
+helm upgrade --install ghsecop ghsecop/ghsecop \
+  --namespace ghsecop-system --create-namespace \
   --set credentials.existingSecret=ghsecop-credentials \
   -f values-sync.yaml
 ```
@@ -74,3 +96,10 @@ kubectl delete crd githubsecretsyncs.ghsecop.io
 | `resources` | Pod resource requests/limits | see `values.yaml` |
 
 See `values.yaml` for the full set of knobs.
+
+## Publishing
+
+Chart releases are automated by `.github/workflows/release-chart.yaml` on pushes to `main` that change `charts/**`:
+
+1. [chart-releaser](https://github.com/helm/chart-releaser-action) creates a GitHub Release and updates the `gh-pages` Helm repo index
+2. The packaged chart is pushed to `oci://ghcr.io/heartwilltell/charts/ghsecop`
